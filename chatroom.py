@@ -40,20 +40,6 @@ def render_chat():
         unsafe_allow_html=True
     )
 
-    # block F5 and Ctrl+R
-    components.html(
-        """
-        <script>
-        document.addEventListener("keydown", function (e) {
-            if ((e.key === "F5") || (e.ctrlKey && e.key === "r")) {
-                e.preventDefault();
-                alert("Please do not refresh the page. Doing so will restart the study and erase your answers.");
-            }
-        });
-        </script>
-        """,
-        height=0
-    )
 
     if "awaiting_post" not in st.session_state:
         st.session_state.awaiting_post = False
@@ -160,21 +146,6 @@ def render_chat():
                 st.session_state.group_members,
                 topic=st.session_state.assigned_topic  # force balanced topic
             )
-
-            # if "selected_topic" in st.session_state:
-            #     topic_key, preset_messages = get_random_topic_and_messages(
-            #         st.session_state.group_ideology,
-            #         user_name,
-            #         st.session_state.group_members,
-            #         topic=st.session_state.selected_topic
-            #     )
-            # else:
-            #     topic_key, preset_messages = get_random_topic_and_messages(
-            #         st.session_state.group_ideology,
-            #         user_name,
-            #         st.session_state.group_members
-                # )
-
 
             st.session_state.selected_topic = topic_key
 
@@ -302,6 +273,7 @@ def render_chat():
 
             # store recent assistant replies to avoid repetition
             recent_ai_texts = [m["content"] for m in st.session_state.messages if m["role"] == "assistant"][-10:]
+      
 
             # detect if someone was directly called
             def get_called_name(messages, members):
@@ -323,30 +295,54 @@ def render_chat():
             # get who was called
             called_name = get_called_name(st.session_state.messages, group_members)
 
-        
-            # add a helper to let GPT infer who should respond
+
             def infer_recipient(messages):
                 members = st.session_state.get("group_members", [])
-                context = messages[-6:]  
-                chat = "\n".join(
-                    [f"{m.get('speaker', 'You')}: {m['content']}" for m in context]
-                )
+                context = messages[-6:]
+                chat = "\n".join([f"{m.get('speaker', 'You')}: {m['content']}" for m in context])
                 system_prompt = (
                     "You are a reasoning agent in a group chat. "
                     "Given the recent messages, infer who should be the next person to respond. "
                     "Only respond with one of the current agent names or say 'all' if it should be general."
                 )
-                response = client.chat.completions.create(
+
+                resp = client.responses.create(
                     model="gpt-5",
-                    messages=[
+                    input=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": chat}
-                    ],
-                    temperature=0.3
+                    ]
                 )
-                reply = response.choices[0].message.content.strip()
-                reply = reply.replace("—", "...")  # replace em dash with ...
-                return reply
+                pick = resp.output_text.strip().replace("—", "...")
+                return pick
+
+
+
+
+            #gpt4
+            # # add a helper to let GPT infer who should respond
+            # def infer_recipient(messages):
+            #     members = st.session_state.get("group_members", [])
+            #     context = messages[-6:]  
+            #     chat = "\n".join(
+            #         [f"{m.get('speaker', 'You')}: {m['content']}" for m in context]
+            #     )
+            #     system_prompt = (
+            #         "You are a reasoning agent in a group chat. "
+            #         "Given the recent messages, infer who should be the next person to respond. "
+            #         "Only respond with one of the current agent names or say 'all' if it should be general."
+            #     )
+            #     response = client.chat.completions.create(
+            #         model="gpt-5",
+            #         messages=[
+            #             {"role": "system", "content": system_prompt},
+            #             {"role": "user", "content": chat}
+            #         ],
+            #         temperature=0.3
+            #     )
+            #     reply = response.choices[0].message.content.strip()
+            #     reply = reply.replace("—", "...")  # replace em dash with ...
+            #     return reply
 
             recipient = infer_recipient(st.session_state.messages)
             if recipient in group_members:
@@ -379,21 +375,15 @@ def render_chat():
             ##### REGULAR AI RESPONSE BLOCK ####
             for i, ai_name in enumerate(ai_names):
                 if i == 0:
-                    time.sleep(random.uniform(1.8, 3.2))  # "thinking" delay before the 1st agent only
+                    time.sleep(random.uniform(1.8, 2.2))  # "thinking" delay before 1st
 
-                # with st.chat_message("assistant"):
                 with st.spinner(f"{ai_name} is typing{'.' * random.randint(1, 3)}"):
-                    time.sleep(random.uniform(2.5, 4.5)) # "typing" delay
-                    context = [
-                        {"role": "user", "content": f"You: {m['content']}"} if m["role"] == "user"
-                        else {"role": "assistant", "content": f"{m['speaker']}: {m['content']}"}
-                        for m in st.session_state.messages[-10:]  
-                    ]
-            
+                    time.sleep(random.uniform(2.5, 3.5))  # "typing" delay
 
-                    response = client.chat.completions.create(
-                        model="gpt-5",
-                        messages=[{"role": "system", "content": (
+                    # build system + context blocks
+                    system_block = {
+                        "role": "system",
+                        "content": (
                             f"{st.session_state.persona_dict[ai_name]} "
                             f"You are {ai_name} , one of several coworkers in a casual group chat at a new workplace.. "
                             "Speak only as yourself. Do not speak for the group or refer to others as 'we'. "
@@ -403,26 +393,52 @@ def render_chat():
                             "Do not change topics unless the participant clearly does. "
                             "Stay focused on the current topic and build on what others said. "
                             "Maintain your ideological stance. Acknowledge differing views if needed, but do not shift your position. "
-                            "Avoid personal talk like weekend plans or small talk."
+                            "Avoid personal talk like weekend plans or small talk. "
                             "Use a natural, informal tone: contractions, everyday expressions, and casual style. "
                             "Mimic how real people type, including slight disfluencies (like 'um', 'I guess', 'I mean'). "
                             "Vary the length and tone of your replies, sometimes short, sometimes more expressive. "
-                            "Do not mention you're an AI or use overly formal language. "
-                        )}] + context,
+                            "Do not mention you're an AI or use overly formal language."
+                        )
+                    }
 
-                        temperature=0.7
-                    )
-                    reply = response.choices[0].message.content.strip()
-                    reply = reply.replace("—", "...")
-                    # recursively remove any group member names at the beginning
-                    while True:
-                        for other_name in group_members:
-                            if reply.startswith(f"{other_name}:"):
-                                reply = reply[len(f"{other_name}:"):].strip()
-                                break
+                    context_blocks = []
+                    for m in st.session_state.messages[-10:]:
+                        if m["role"] == "user":
+                            context_blocks.append({"role": "user", "content": m["content"]})
                         else:
-                            break  # no prefix matched
+                            context_blocks.append({"role": "assistant", "content": f"{m['speaker']}: {m['content']}"})
 
+                    # first pass
+                    resp = client.responses.create(
+                        model="gpt-5",
+                        input=[system_block] + context_blocks
+                    )
+                    reply = resp.output_text.strip()
+
+                    # after first pass, before cleanup/render
+                    recent_ai_texts = [m["content"] for m in st.session_state.messages if m["role"] == "assistant"][-10:]
+                    if reply in recent_ai_texts:
+                        resp = client.responses.create(
+                            model="gpt-5",
+                            input=[{"role": "system", "content": "Avoid repeating yourself; add a new angle briefly."}]
+                                + [system_block] + context_blocks
+                        )
+                        reply = resp.output_text.strip()
+
+                    # then do your cleanup
+                    reply = reply.replace("—", "...")
+                    while True:
+                        stripped = False
+                        for other_name in group_members:
+                            prefix = f"{other_name}:"
+                            if reply.startswith(prefix):
+                                reply = reply[len(prefix):].strip()
+                                stripped = True
+                                break
+                        if not stripped:
+                            break
+
+                    # render + store
                     timestamp = datetime.now().strftime("%H:%M:%S")
                     display_time = datetime.now().strftime("%H:%M")
                     message(
@@ -440,8 +456,10 @@ def render_chat():
                         "timestamp_unix": time.time(),
                         "temp_round_marker": True
                     })
+
                 if i < len(ai_names) - 1:
                     time.sleep(random.uniform(1.5, 3.0))
+
 
             # END of 1-3 agents' replies → do 1 more follow-up
             # get last agent speaker (the final agent who replied)
@@ -544,24 +562,48 @@ def render_chat():
 
 
 
-                context = []
-                for m in st.session_state.messages:
+                system_block = {"role": "system", "content": followup_prompt}
+
+                context_blocks = []
+                for m in st.session_state.messages[-20:]:
                     if m["role"] == "assistant":
-                        context.append({"role": "assistant", "content": m["content"]})
+                        context_blocks.append({"role": "assistant", "content": m["content"]})
+                    elif m["role"] == "user":
+                        context_blocks.append({"role": "user", "content": m["content"]})
 
-                # (read the last 20 messages)
-                context = context[-20:]
-
-
-                response = client.chat.completions.create(
+                resp = client.responses.create(
                     model="gpt-5",
-                    messages=[{"role": "system", "content": followup_prompt}] + context,
-                    temperature=0.8
+                    input=[system_block] + context_blocks
                 )
-                reply = response.choices[0].message.content.strip()
+
+                reply = resp.output_text.strip()
+
+
+                # ANTI-REPEAT NUDGE 
+                recent_ai_texts = [m["content"] for m in st.session_state.messages if m["role"] == "assistant"][-10:]
+                if reply in recent_ai_texts:
+                    resp = client.responses.create(
+                        model="gpt-5",
+                        input=[{"role": "system", "content": "Avoid repeating yourself; add a new angle briefly."}]
+                            + [system_block] + context_blocks
+                    )
+                    reply = resp.output_text.strip()
+
+                # cleanup
                 reply = reply.replace("—", "...")
+                # strip any "Name:" prefixes if present
+                while True:
+                    stripped = False
+                    for other_name in group_members:
+                        prefix = f"{other_name}:"
+                        if reply.startswith(prefix):
+                            reply = reply[len(prefix):].strip()
+                            stripped = True
+                            break
+                    if not stripped:
+                        break
 
-
+                # render + store
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 display_time = datetime.now().strftime("%H:%M")
                 message(
