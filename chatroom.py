@@ -337,7 +337,7 @@ def render_chat():
                     "Only respond with one of the current agent names or say 'all' if it should be general."
                 )
                 response = client.chat.completions.create(
-                    model="gpt-4.1",
+                    model="gpt-5",
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": chat}
@@ -392,7 +392,7 @@ def render_chat():
             
 
                     response = client.chat.completions.create(
-                        model="gpt-4.1",
+                        model="gpt-5",
                         messages=[{"role": "system", "content": (
                             f"{st.session_state.persona_dict[ai_name]} "
                             f"You are {ai_name} , one of several coworkers in a casual group chat at a new workplace.. "
@@ -554,7 +554,7 @@ def render_chat():
 
 
                 response = client.chat.completions.create(
-                    model="gpt-4.1",
+                    model="gpt-5",
                     messages=[{"role": "system", "content": followup_prompt}] + context,
                     temperature=0.8
                 )

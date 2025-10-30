@@ -149,21 +149,20 @@ elif st.session_state.page == "demographics":
         "<p style='color:red; font-weight:bold;'>⚠️ Please do not refresh the page. Doing so will restart the study and erase your answers.</p>",
         unsafe_allow_html=True
     )
+    st.markdown("""
+    <style>
+    .question-label {
+        font-size: 18px !important;
+        line-height: 1 !important;
+        font-weight: 600 !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.5rem;
+        display: block !important;
+        color: #111 !important;
+    }
 
-    # block F5 / Ctrl+R
-    components.html(
-        """
-        <script>
-        document.addEventListener("keydown", function (e) {
-            if ((e.key === "F5") || (e.ctrlKey && e.key === "r")) {
-                e.preventDefault();
-                alert("Please do not refresh the page. Doing so will restart the study and erase your answers.");
-            }
-        });
-        </script>
-        """,
-        height=0
-    )
+
+    """, unsafe_allow_html=True)
 
     st.title("About You")
     with st.form("demo_form"):
@@ -188,25 +187,101 @@ elif st.session_state.page == "demographics":
             "Doctorate (e.g., PhD, EdD)"
         ]
 
-        age = st.selectbox("Please provide your age.", age_options, index=0)
-        gender = st.selectbox("Please indicate your gender.", gender_options, index=0)
-        ethnicity = st.selectbox("Which of the following category best describes you?", ethnicity_options, index=0)
-        education = st.selectbox("What is the highest level of education you have completed?", education_options, index=0)
+         # manual labels for larger font
+        st.markdown("<div class='question-label'>Please provide your age.</div>", unsafe_allow_html=True)
+        age = st.selectbox("", age_options, index=0, key="age_select")
+
+        st.markdown("<div class='question-label'>Please indicate your gender.</div>", unsafe_allow_html=True)
+        gender = st.selectbox("", gender_options, index=0, key="gender_select")
+
+        st.markdown("<div class='question-label'>Which of the following category best describes you?</div>", unsafe_allow_html=True)
+        ethnicity = st.selectbox("", ethnicity_options, index=0, key="ethnicity_select")
+
+        st.markdown("<div class='question-label'>What is the highest level of education you have completed?</div>", unsafe_allow_html=True)
+        education = st.selectbox("", education_options, index=0, key="education_select")
+
+        st.markdown("<div class='question-label'>Generally speaking, how would you describe yourself politically?</div>", unsafe_allow_html=True)
+        ideology = st.radio(
+            label="Political ideology",
+            options=["Very liberal", "Liberal", "Moderate / Centrist", "Conservative", "Very conservative"],
+            index=None,
+            label_visibility="collapsed",
+            key="ideology_radio"
+        )
+
 
         submitted = st.form_submit_button("Next")
 
-        if submitted and all(x != "Choose an option" for x in [gender, ethnicity, education, age]):
+        if submitted and all(x != "Choose an option" for x in [gender, ethnicity, education, age]) and ideology:
             st.session_state.demographics = {
                 "prolific_id": pid,
                 "age": age,
                 "gender": gender,
                 "ethnicity": ethnicity,
                 "education": education,
+                "ideology": ideology,
             }
-            next_page("chat")
+            next_page("pre_stance")
         elif submitted:
             st.warning("Please answer all questions before continuing.")
 
+
+# study 2 pre-stance page
+elif st.session_state.page == "pre_stance":
+
+    st.markdown("""
+    <style>
+    .radio-label {
+        font-size: 18px !important;
+        line-height: 1.6 !important;
+        font-weight: 600 !important;
+        margin-top: 1rem !important;
+        margin-bottom: 0.5rem !important;
+        display: block !important;
+        color: #111 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+        
+    st.markdown('<p class="big-label">Before we begin the chat, please tell us your current opinions on the following topics.</p>', unsafe_allow_html=True)
+
+    with st.form("pre_stance_form"):
+        scale = [
+            "Strongly oppose",
+            "Oppose",
+            "Neutral",
+            "Support",
+            "Strongly support"
+        ]
+
+
+        pre_stance = {}
+        topics = [
+            ("guns", "Allowing private citizens to own guns"),
+            ("immigration", "Strengthening border control and limiting immigration"),
+            ("abortion", "Legal access to abortion"),
+            ("vaccines", "Mandating vaccines for children"),
+            ("gender", "Introducing gender education in elementary schools")
+        ]
+
+        for key, label in topics:
+            st.markdown(f"<div class='radio-label'>{label}</div>", unsafe_allow_html=True)
+            pre_stance[key] = st.radio(
+                label=label,
+                options=scale,
+                horizontal=True,
+                index=None,
+                key=f"pre_{key}",
+                label_visibility="collapsed"
+            )
+
+        submitted = st.form_submit_button("Next")
+
+        if submitted and all(pre_stance.values()):
+            st.session_state.pre_stance = pre_stance
+            next_page("chat")
+        elif submitted:
+            st.warning("Please answer all questions before continuing.")
 
 # chatroom page 
 elif st.session_state.page == "chat":
@@ -304,8 +379,15 @@ elif st.session_state.page == "final_survey":
         "Bachelor's degree (e.g., BA, BS)": 5, "Master's degree (e.g., MA, MS, MEd)": 6,
         "Professional degree (e.g., MD, JD)": 7, "Doctorate (e.g., PhD, EdD)": 8
     }
-    IDEOLOGY_MAP = {"liberal": 1, "conservative": 2}
+    ROOM_MAP = {"liberal": 1, "conservative": 2}
     TOPIC_MAP = {"guns": 1, "immigration": 2, "abortion": 3, "vaccines": 4, "gender": 5}
+    # study 2
+    IDEOLOGY_MAP = {"Very liberal": 1, "Liberal": 2, "Moderate": 3, "Conservative": 4, "Very conservative": 5}
+    PRE_MAP = {
+    "Strongly oppose": 1, "Oppose": 2, "Neutral": 3, "Support": 4, "Strongly support": 5
+}
+
+
 
     if st.button("Submit"):
         # validation: make sure emotional questions are answered
@@ -333,11 +415,12 @@ elif st.session_state.page == "final_survey":
             sheet = gc.open_by_url(st.secrets["connections"]["gsheets"]["spreadsheet"])
 
             try:
-                worksheet = sheet.worksheet("StudyData")
+                worksheet = sheet.worksheet("Study2")
             except WorksheetNotFound:
-                worksheet = sheet.add_worksheet("StudyData", rows=1000, cols=26)
+                worksheet = sheet.add_worksheet("Study2", rows=1000, cols=26)
                 worksheet.append_row([
                     "PROLIFIC_PID", "age", "sex", "ethnicity", "education",
+                    "ideology","guns","immigration","abortion","vaccines","gender",
                     "agent_big5", "agent_avatar",
                     "condition", "topic",
                     "response1",
@@ -357,10 +440,17 @@ elif st.session_state.page == "final_survey":
                 GENDER_MAP[st.session_state.demographics["gender"]],
                 ETHNICITY_MAP[st.session_state.demographics["ethnicity"]],
                 EDUCATION_MAP[st.session_state.demographics["education"]],
+                IDEOLOGY_MAP[st.session_state.demographics["ideology"]],
+                PRE_MAP[st.session_state.pre_stance["guns"]],
+                PRE_MAP[st.session_state.pre_stance["immigration"]],
+                PRE_MAP[st.session_state.pre_stance["abortion"]],
+                PRE_MAP[st.session_state.pre_stance["vaccines"]],
+                PRE_MAP[st.session_state.pre_stance["gender"]],
                 agent_big5,
                 agent_avatar,
-                IDEOLOGY_MAP[st.session_state.group_ideology],
+                ROOM_MAP[st.session_state.group_ideology],
                 TOPIC_MAP[st.session_state.selected_topic],
+
             ]
 
             user_responses = [m["content"] for m in st.session_state.messages if m["role"] == "user"]

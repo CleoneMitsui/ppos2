@@ -5,4 +5,4 @@ headless = true
 base="light"
 
 [app]
-script = "streamlit_app.py"
+script = "ppos2.py"
