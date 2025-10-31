@@ -66,11 +66,16 @@ topics = {
 
 def get_random_topic_and_messages(ideology, user_name, agent_names, topic=None):
     if topic is not None:
-        topic_key = topic
+        topic_key = topic.lower()
     else:
         topic_key = random.choice(list(topics.keys()))
 
+    # fallback if the assigned topic isn't found
+    if topic_key not in topics:
+        topic_key = random.choice(list(topics.keys()))
+
     messages = topics[topic_key][ideology]
+
 
     replacements = dict(zip(["{{agent1}}", "{{agent2}}", "{{agent3}}"], agent_names))
 
