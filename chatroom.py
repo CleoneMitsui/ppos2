@@ -374,22 +374,32 @@ def render_chat():
             # loop
             ##### REGULAR AI RESPONSE BLOCK ####
             for i, ai_name in enumerate(ai_names):
-                if i == 0:
-                    time.sleep(random.uniform(1.8, 2.2))  # "thinking" delay before 1st
-
                 with st.spinner(f"{ai_name} is typing{'.' * random.randint(1, 3)}"):
-                    time.sleep(random.uniform(2.5, 3.5))  # "typing" delay
+                    time.sleep(0)  # no thinking time
 
+                    trait = st.session_state.trait_dict[ai_name]
+
+                    # lowercase rule for only HP and LC
+                    if trait in ["HO", "LC"]:
+                        lowercase_instruction = "Use all lowercase, like someone texting casually."
+                    else:
+                        lowercase_instruction = "Use normal sentence casing (capitalise sentences and 'I')."
+
+                
                     # build system + context blocks
                     system_block = {
                         "role": "system",
                         "content": (
                             f"{st.session_state.persona_dict[ai_name]} "
-                            f"You are {ai_name} , one of several coworkers in a casual group chat at a new workplace.. "
+                            f"You are {ai_name}, one of several new coworkers chatting casually in a small workplace group chat. "
+                            f"{lowercase_instruction}"
                             "Speak only as yourself. Do not speak for the group or refer to others as 'we'. "
-                            "Respond naturally as if in a group chat. Be casual and brief. "
-                            "Vary your tone and length like real people. Do not use em dashes (—). "
-                            "Do not ask the participant a direct question or mention their name. "
+                            "Keep replies natural, 1 to 4 sentences, around 60 words max."
+                            "Write like a real person texting in a group chat: mix short sentences, contractions, filler words, and natural rhythm. "
+                            "Don’t sound like you’re explaining or summarising facts; react, agree, joke lightly, or add personal takes. "
+                            "You can mention feelings or personal examples, but keep them realistic and consistent with your persona. "
+                            "Don’t use bullet points, don’t list data, don’t paste links, and don’t act like a teacher or assistant. "
+                            "Never say things like 'I can share resources' or 'I can drop summaries'. "
                             "Do not change topics unless the participant clearly does. "
                             "Stay focused on the current topic and build on what others said. "
                             "Maintain your ideological stance. Acknowledge differing views if needed, but do not shift your position. "
@@ -398,6 +408,8 @@ def render_chat():
                             "Mimic how real people type, including slight disfluencies (like 'um', 'I guess', 'I mean'). "
                             "Vary the length and tone of your replies, sometimes short, sometimes more expressive. "
                             "Do not mention you're an AI or use overly formal language."
+                            "Keep it conversational and spontaneous. "
+                            "Stay roughly aligned with your ideological leaning, but make it sound like normal opinions, not slogans."
                         )
                     }
 
@@ -536,7 +548,7 @@ def render_chat():
             }
 
             with st.spinner(f"{followup_speaker} is typing..."):
-                time.sleep(random.uniform(2.5, 4.0))
+                time.sleep(random.uniform(0.5, 2.2))
                 user_name = st.session_state.get("nickname", "you")
                 
                 
@@ -550,6 +562,10 @@ def render_chat():
                 followup_prompt = (
                     f"{st.session_state.persona_dict[followup_speaker]} "
                     f"You are {followup_speaker} in a casual work chat group. "
+                    "You’re about to add one short, natural comment that keeps the conversation moving. "
+                    "Sound human, not robotic or instructive—use contractions, natural pauses, or mild emotion. "
+                    "Don’t lecture, explain, or list information. "
+                    "Just react naturally, add a thought, joke, or short reflection depending on your personality. "
                     "Speak only as yourself. Do not represent the group or refer to others as 'we'. "
                     "Be casual and brief, and vary your tone and length like real people. "
                     "Avoid sounding robotic or formulaic. Do not use em dashes (—). "

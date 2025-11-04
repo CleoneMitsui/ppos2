@@ -189,16 +189,16 @@ elif st.session_state.page == "demographics":
 
          # manual labels for larger font
         st.markdown("<div class='question-label'>Please provide your age.</div>", unsafe_allow_html=True)
-        age = st.selectbox("", age_options, index=0, key="age_select")
+        age = st.selectbox("Age", age_options, index=0, key="age_select", label_visibility="collapsed")
 
         st.markdown("<div class='question-label'>Please indicate your gender.</div>", unsafe_allow_html=True)
-        gender = st.selectbox("", gender_options, index=0, key="gender_select")
+        gender = st.selectbox("Gender", gender_options, index=0, key="gender_select", label_visibility="collapsed")
 
         st.markdown("<div class='question-label'>Which of the following category best describes you?</div>", unsafe_allow_html=True)
-        ethnicity = st.selectbox("", ethnicity_options, index=0, key="ethnicity_select")
+        ethnicity = st.selectbox("Ethnicity", ethnicity_options, index=0, key="ethnicity_select", label_visibility="collapsed")
 
         st.markdown("<div class='question-label'>What is the highest level of education you have completed?</div>", unsafe_allow_html=True)
-        education = st.selectbox("", education_options, index=0, key="education_select")
+        education = st.selectbox("Education", education_options, index=0, key="education_select", label_visibility="collapsed")
 
         st.markdown("<div class='question-label'>Generally speaking, how would you describe yourself politically?</div>", unsafe_allow_html=True)
         ideology = st.radio(
@@ -264,16 +264,28 @@ elif st.session_state.page == "pre_stance":
             ("gender", "Introducing gender education in elementary schools")
         ]
 
+        # add consistent radio styling
+        st.markdown("""
+        <style>
+        .radio-label {
+            font-size: 18px !important;
+            line-height: 1.6 !important;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
         for key, label in topics:
             st.markdown(f"<div class='radio-label'>{label}</div>", unsafe_allow_html=True)
             pre_stance[key] = st.radio(
                 label=label,
                 options=scale,
-                horizontal=True,
                 index=None,
                 key=f"pre_{key}",
                 label_visibility="collapsed"
             )
+
 
         submitted = st.form_submit_button("Next")
 
