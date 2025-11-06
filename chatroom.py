@@ -27,7 +27,7 @@ def render_chat():
     # import streamlit.components.v1 as components
     if "agent_rounds_raw" not in st.session_state:
         st.session_state.agent_rounds_raw = []
-        
+
     from utils import generate_participant_id
 
     if "participant_id" not in st.session_state:

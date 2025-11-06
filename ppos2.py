@@ -82,6 +82,17 @@ if st.session_state.page == "intro":
         unsafe_allow_html=True
     )
 
+    # ensure page starts at the top, especially on mobile
+    st.markdown("""
+        <script>
+            window.scrollTo({ top: 0, behavior: 'auto' });
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(() => window.scrollTo(0, 0), 200);
+            });
+        </script>
+    """, unsafe_allow_html=True)
+
+
     # js to block F5 and Ctrl+R
     components.html(
         """
