@@ -82,7 +82,7 @@ if st.session_state.page == "intro":
         unsafe_allow_html=True
     )
 
-    # ensure page starts at the top, especially on mobile
+    # ensure page starts at the top, on mobile
     st.markdown("""
         <script>
             window.scrollTo({ top: 0, behavior: 'auto' });
@@ -405,7 +405,7 @@ elif st.session_state.page == "final_survey":
     ROOM_MAP = {"liberal": 1, "conservative": 2}
     TOPIC_MAP = {"guns": 1, "immigration": 2, "abortion": 3, "vaccines": 4, "gender": 5}
     # study 2
-    IDEOLOGY_MAP = {"Very liberal": 1, "Liberal": 2, "Moderate": 3, "Conservative": 4, "Very conservative": 5}
+    IDEOLOGY_MAP = {"Very liberal": 1, "Liberal": 2, "Moderate / Centrist": 3, "Conservative": 4, "Very conservative": 5}
     PRE_MAP = {
     "Strongly oppose": 1, "Oppose": 2, "Neutral": 3, "Support": 4, "Strongly support": 5
 }
