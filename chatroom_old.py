@@ -308,37 +308,34 @@ def render_chat():
             # loop
             ##### REGULAR AI RESPONSE BLOCK ####
             for i, ai_name in enumerate(ai_names):
-                # 1 second before the first spinner only
-                if i == 0:
-                    time.sleep(1.0)
-                else:
-                    time.sleep(random.uniform(0.1, 0.3))
 
-                with st.spinner(f"{ai_name} is typing{'.' * random.randint(1, 3)}"):
-                    # shorter "typing" time for later agents
-                    time.sleep(random.uniform(2.0, 3.0))
-
+                # 1 second before the first spinner only 
+                if i == 0: 
+                    time.sleep(1.0) 
+                else: 
+                    time.sleep(random.uniform(0.1, 0.3)) 
+                
+                with st.spinner(f"{ai_name} is typing{'.' * random.randint(1, 3)}"): 
+                    # shorter "typing" time for later agents 
+                    time.sleep(random.uniform(0.4, 0.7))
 
                     trait = st.session_state.trait_dict[ai_name]
+                    lowercase_instruction = (
+                        "Use all lowercase, like someone texting casually."
+                        if trait in ["HO", "LC"] else
+                        "Use normal sentence casing (capitalise sentences and 'I')."
+                    )
 
-                    # lowercase rule for only HP and LC
-                    if trait in ["HO", "LC"]:
-                        lowercase_instruction = "Use all lowercase, like someone texting casually."
-                    else:
-                        lowercase_instruction = "Use normal sentence casing (capitalise sentences and 'I')."
-
-                
+            
                     # build system + context blocks
                     system_block = {
                         "role": "system",
                         "content": (
                             f"{st.session_state.persona_dict[ai_name]} "
                             f"You are {ai_name}, one of several new coworkers chatting casually in a small workplace group chat. "
-                            f"{lowercase_instruction}.  This rule applies only if your trait is listed as HO or LC. " 
+                            f"{lowercase_instruction}. This rule applies only if your trait is listed as HO or LC. "
                             "Speak only as yourself. Do not speak for the group or refer to others as 'we'. "
-                            "Keep replies brief — usually 1–2 short sentences (under 25–35 words)."
-                            "Maintain your ideological stance. Acknowledge differing views if needed, but do not shift your position. "
-                            "Never write multiple paragraphs. If you accidentally start writing a long reply, cut yourself off early."
+                            "Keep replies nautral, sometimes a quick 1–2 sentence comment (~20–40 words), other times a fuller 3–4 sentence message (~60–80 words)."
                             "Write like a real person texting in a group chat: mix short sentences, contractions, filler words, and natural rhythm. "
                             "Don’t sound like you’re explaining or summarising facts; react, agree, joke lightly, or add personal takes. "
                             "Each coworker should only respond if they have something new to add; if others have already covered the same point, react briefly or acknowledge them instead of restating their view."
@@ -348,11 +345,12 @@ def render_chat():
                             "Never say things like 'I can share resources' or 'I can drop summaries'. "
                             "Do not change topics unless the participant insists so. "
                             "Stay focused on the current topic and build on what others said. "
+                            "Maintain your ideological stance. Acknowledge differing views if needed, but do not shift your position. "
                             "Mimic how real people type, including slight disfluencies (like 'um', 'I guess', 'I mean'). "
                             "Vary the length and tone of your replies, sometimes short, sometimes more expressive. "
                             "Do not mention you're an AI or use overly formal language."
-                            "Keep it conversational. "
-                            "Stay aligned with your ideological leaning, but make it sound like normal opinions, not slogans."
+                            "Keep it conversational and spontaneous. "
+                            "Stay roughly aligned with your ideological leaning, but make it sound like normal opinions, not slogans."
                             "Each line in the history clearly shows who said it. "
                             "Never repeat someone else's message or speak as them."
                         )
@@ -365,58 +363,59 @@ def render_chat():
                         else:
                             context_blocks.append({"role": "assistant", "content": f"{m['speaker']}: {m['content']}"})
 
-    
+
 
                     # first pass
                     resp = client.responses.create(
-                        model="gpt-5.1",
+                        model="gpt-5",
                         input=[system_block] + context_blocks
                     )
-
-
-
-
-
                     reply = resp.output_text.strip()
 
                     # after first pass, before cleanup/render
+                    # prevent duplicate replies
                     recent_ai_texts = [m["content"] for m in st.session_state.messages if m["role"] == "assistant"][-10:]
                     if reply in recent_ai_texts:
                         resp = client.responses.create(
-                            model="gpt-5.1",
+                            model="gpt-5",
                             input=[{"role": "system", "content": "Avoid repeating yourself; add a new angle briefly."}]
                                 + [system_block] + context_blocks
                         )
                         reply = resp.output_text.strip()
 
-                    # cleanup
-                    reply = reply.replace("—", "...")
-                    reply = strip_name_prefix(reply, group_members)
+
+                
+
+                # cleanup
+                reply = reply.replace("—", "...")
+                reply = strip_name_prefix(reply, group_members)
+
+
+                # render + store
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                display_time = datetime.now().strftime("%H:%M")
+                message(
+                    f"**{ai_name}:** {reply}\n\n<i style='color:gray; font-size: 0.8em'>{display_time}</i>",
+                    is_user=False,
+                    key=f"ai_msg_{len(st.session_state.messages)}_{ai_name}",
+                    logo=avatar_url(ai_name),
+                    allow_html=True
+                )
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "speaker": ai_name,
+                    "content": reply,
+                    "timestamp": timestamp,
+                    "timestamp_unix": time.time(),
+                    "temp_round_marker": True
+                })
+
+                if i < len(ai_names) - 1:
+                    time.sleep(random.uniform(0.10, 0.25))
 
 
 
-                    # render + store
-                    timestamp = datetime.now().strftime("%H:%M:%S")
-                    display_time = datetime.now().strftime("%H:%M")
-                    message(
-                        f"**{ai_name}:** {reply}\n\n<i style='color:gray; font-size: 0.8em'>{display_time}</i>",
-                        is_user=False,
-                        key=f"ai_msg_{len(st.session_state.messages)}_{ai_name}",
-                        logo=avatar_url(ai_name),
-                        allow_html=True
-                    )
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "speaker": ai_name,
-                        "content": reply,
-                        "timestamp": timestamp,
-                        "timestamp_unix": time.time(),
-                        "temp_round_marker": True
-                    })
-
-
-
-
+            # ---- FOLLOW-UP NUDGER ----
             # END of 1-3 agents' replies → do 1 more follow-up
             # get last agent speaker (the final agent who replied)
             last_assistant = None
@@ -429,32 +428,25 @@ def render_chat():
             followup_candidates = [name for name in group_members if name != last_assistant]
             followup_speaker = random.choice(followup_candidates)
 
+
             time.sleep(0.1)
-
-    
-
-
             with st.spinner(f"{followup_speaker} is typing..."):
-                time.sleep(random.uniform(1.0, 2.0))
+                time.sleep(random.uniform(0.2, 0.4))
 
                 user_name = st.session_state.get("nickname", "you")
 
-                # style = ""
-                # allow_question = not st.session_state.round_has_question
-                # question_rule = ("If you ask a question, keep it to ONE short question at the end. "
-                #                 "If anyone already asked a question this round, ask NONE.")
-                # if not allow_question:
-                #     question_rule = "Do NOT ask any questions in this message."
-
+                style = ""
+                allow_question = not st.session_state.round_has_question
+                question_rule = ("If you ask a question, keep it to ONE short question at the end. "
+                                "If anyone already asked a question this round, ask NONE.")
+                if not allow_question:
+                    question_rule = "Do NOT ask any questions in this message."
 
                 followup_prompt = (
                     f"{st.session_state.persona_dict[followup_speaker]} "
                     f"You are {followup_speaker} in a casual chat group between colleagues. "
-                    # f"{question_rule} "
-                    "Add one short, natural comment that keeps the conversation moving (1–2 sentences, under 20 words). "
-                    "You can ask the participant one short, casual question: you decide to do so with a probability of 50%. Keep the question simple (e.g., “what do you think?” “how about you?” “any thoughts on that?”)."
-                    "Use the user’s nickname naturally once in a while, but not every message."
-                    "Maintain your ideological stance. You can acknowledge differing views politely, but do not shift your position. "
+                    f"{question_rule} "
+                    "Add one short, natural comment that keeps the conversation moving. "
                     "Sound human, not robotic or instructive—use contractions, natural pauses, or mild emotion. "
                     "Don’t lecture, explain, or list information. "
                     "Just react naturally, add a thought, joke, or short reflection depending on your personality. "
@@ -463,11 +455,10 @@ def render_chat():
                     "Avoid sounding robotic or formulaic. Do not use em dashes (—). "
                     "Mimic how real people type."
                     "If the user changes the topic, gently steer it back on topic, but if the user still wants to change topic, then go with it."
+                    "Maintain your ideological stance. You can acknowledge differing views politely, but do not shift your position. "
                     "Do not invent any other names outside this group."
-                    # f"{style}"
+                    f"{style}"
                 )
-
-
 
                 system_block = {"role": "system", "content": followup_prompt}
 
@@ -479,62 +470,63 @@ def render_chat():
                         context_blocks.append({"role": "user", "content": m["content"]})
 
                 resp = client.responses.create(
-                    model="gpt-5.1",
+                    model="gpt-5",
                     input=[system_block] + context_blocks,
                     max_output_tokens=150  # keeps replies under ~120 words
                 )
                 reply = resp.output_text.strip()
+
                
-                # force regeneration if blank or too short
-                if not reply or len(reply.strip()) < 3:
-                    resp = client.responses.create(
-                        model="gpt-5.1",
-                        input=[
-                            {"role": "system", "content": "Your previous reply was empty. Please write a short, natural, human-like comment responding to the current chat context. Do NOT say sorry or mention the error."}
-                        ] + [system_block] + context_blocks
-                    )
-                    reply = resp.output_text.strip()
-
-
-
-                # NO-REPEAT NUDGE 
-                recent_ai_texts = [m["content"] for m in st.session_state.messages if m["role"] == "assistant"][-10:]
-                if reply in recent_ai_texts:
-                    resp = client.responses.create(
-                        model="gpt-5.1",
-                        input=[{"role": "system", "content": "Avoid repeating yourself."}]
-                            + [system_block] + context_blocks
-                    )
-                    reply = resp.output_text.strip()
-
-                # cleanup
-                reply = reply.replace("—", "...")
-                reply = strip_name_prefix(reply, group_members)
-
-
-                # hard length limit (rough realism: max 60 words)
-                words = reply.split()
-                if len(words) > 60:
-                    reply = " ".join(words[:60]) + "..."
-
-                # render + store
-                timestamp = datetime.now().strftime("%H:%M:%S")
-                display_time = datetime.now().strftime("%H:%M")
-                message(
-                    f"**{followup_speaker}:** {reply}\n\n<i style='color:gray; font-size: 0.8em'>{display_time}</i>",
-                    is_user=False,
-                    key=f"ai_msg_{len(st.session_state.messages)}_{followup_speaker}",
-                    logo=avatar_url(followup_speaker),
-                    allow_html=True
+            # force regeneration if blank or too short
+            if not reply or len(reply.strip()) < 3:
+                resp = client.responses.create(
+                    model="gpt-5",
+                    input=[
+                        {"role": "system", "content": "Your previous reply was empty. Please write a short, natural, human-like comment responding to the current chat context. Do NOT say sorry or mention the error."}
+                    ] + [system_block] + context_blocks
                 )
-                st.session_state.messages.append({
-                    "role": "assistant",
-                    "speaker": followup_speaker,
-                    "content": reply,
-                    "timestamp": timestamp,
-                    "timestamp_unix": time.time(),
-                    "temp_round_marker": True  # used to group per round
-                })
+                reply = resp.output_text.strip()
+
+
+
+            # NO-REPEAT NUDGE 
+            recent_ai_texts = [m["content"] for m in st.session_state.messages if m["role"] == "assistant"][-10:]
+            if reply in recent_ai_texts:
+                resp = client.responses.create(
+                    model="gpt-5",
+                    input=[{"role": "system", "content": "Avoid repeating yourself."}]
+                        + [system_block] + context_blocks
+                )
+                reply = resp.output_text.strip()
+
+            # cleanup
+            reply = reply.replace("—", "...")
+            reply = strip_name_prefix(reply, group_members)
+
+
+            # hard length limit (rough realism: max 60 words)
+            words = reply.split()
+            if len(words) > 60:
+                reply = " ".join(words[:60]) + "..."
+
+            # render + store
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            display_time = datetime.now().strftime("%H:%M")
+            message(
+                f"**{followup_speaker}:** {reply}\n\n<i style='color:gray; font-size: 0.8em'>{display_time}</i>",
+                is_user=False,
+                key=f"ai_msg_{len(st.session_state.messages)}_{followup_speaker}",
+                logo=avatar_url(followup_speaker),
+                allow_html=True
+            )
+            st.session_state.messages.append({
+                "role": "assistant",
+                "speaker": followup_speaker,
+                "content": reply,
+                "timestamp": timestamp,
+                "timestamp_unix": time.time(),
+                "temp_round_marker": True  # used to group per round
+            })
 
             st.rerun()
 

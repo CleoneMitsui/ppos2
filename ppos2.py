@@ -7,9 +7,6 @@ from gspread.exceptions import WorksheetNotFound
 from utils import generate_participant_id
 
 
-# force thank you end page for content checking
-# st.session_state.page = "thankyou"
-
 
 # set page config
 st.set_page_config(page_title="Chatroom Study", page_icon="💬")
@@ -26,35 +23,6 @@ else:
 
 # extract plain string for writing to sheet
 st.session_state.prolific_pid_str = st.session_state.participant_id
-
-
-
-# for debugging display 
-# st.write(f"PROLIFIC_PID: {st.session_state.prolific_pid}")
-
-# --- GOOGLE SHEET WRITE TEST (button) ---
-# if st.button("Send to Google Sheet"):
-#     try:
-#         credentials = service_account.Credentials.from_service_account_info(
-#             st.secrets["connections"]["gsheets"],
-#             scopes=["https://www.googleapis.com/auth/spreadsheets"]
-#         )
-#         gc = gspread.authorize(credentials)
-#         sheet = gc.open_by_url(st.secrets["connections"]["gsheets"]["spreadsheet"])
-
-#         try:
-#             worksheet = sheet.worksheet("DebugProlificIDs")
-#         except gspread.exceptions.WorksheetNotFound:
-#             worksheet = sheet.add_worksheet("DebugProlificIDs", rows=100, cols=10)
-#             worksheet.append_row(["PROLIFIC_PID"])
-#         worksheet.append_row([
-#             prolific_pid
-#         ], value_input_option="USER_ENTERED")
-#         st.success(f"Recorded: {prolific_pid}")
-#     except Exception as e:
-#         st.error(f"Error saving to Google Sheet: {e}")
-
-# st.info("adding ?PROLIFIC_PID=ABCD1234 to the end of the URL.")
 
 
 
@@ -121,7 +89,7 @@ if st.session_state.page == "intro":
     **Purpose of the Study:** This study explores how people interact in casual group conversations. 
     
     **Procedures:** If you volunteer to participate in this study, you will complete a brief online interaction. 
-                The process takes approximately 7~8 minutes to complete.  
+                The process takes approximately 7 minutes to complete.  
     
     **Requirements:** All participants must be Prolific participants, and be at least 18 years of age.
     
@@ -133,9 +101,12 @@ if st.session_state.page == "intro":
     
     **Confidentiality:** This study is conducted solely for academic research purposes. Therefore, the data collected from this study will be anonymised to ensure confidentiality, and no analysis will be performed that could lead to identification of individuals. While the raw data may be disclosed upon submission to academic journals, it will not be made public in a manner that could identify individuals. In the case that the data is not made public, the data will be retained by the researchers for up to 30 years before permanently deleted.
 
-    **Use of Generative AI:** In this study, you will be interacting with artificial intelligence (AI) agents in a simulated group chat. The text you enter during the chat will be processed by Generative AI models to produce responses in real time. In addition, your input may later be analysed using Generative AI tools for research purposes. Only the text you write during the experiment will be entered into the AI system. No personally identifiable information, such as your Prolific ID, will be included. Your input will be used to help improve our understanding of group communication. By continuing, you consent to both interacting with AI agents and having your written responses analysed using Generative AI.
+    **Use of Generative AI:** In this study, you will interact with AI agents in a simulated group chat. Your typed messages will be processed by AI models to generate responses in real time.
+                After the study, your input may later be analysed using AI tools for research purposes. Only the text you write during the experiment will be entered into the AI system. 
+                No personally identifiable information will be included. By continuing, you consent to both interacting with AI agents and having your messages analysed for academic research.
                 
-    **Participation and Withdrawal:** Participation in this study is not obligatory. Participants have the right to withdraw from the study at any point. Should you decide to discontinue the participation, you may do so by closing the browser. Data that is partially completed will be temporarily saved online but will be promptly discarded and not be subjected to analysis.
+    **Participation and Withdrawal:** Participation in this study is not obligatory. Participants have the right to withdraw from the study at any point. Should you decide to discontinue the participation, you may do so by closing the browser. 
+                Data that is partially completed will not be saved or be subjected to analysis.
 
     **Rights of Research Participants:** This project has been reviewed by the Osaka Metropolitan University Research Ethics Board for research involving human participants.
            

@@ -316,7 +316,7 @@ def render_chat():
 
                 with st.spinner(f"{ai_name} is typing{'.' * random.randint(1, 3)}"):
                     # shorter "typing" time for later agents
-                    time.sleep(random.uniform(2.0, 3.0))
+                    time.sleep(random.uniform(0.4, 0.7))
 
 
                     trait = st.session_state.trait_dict[ai_name]
@@ -336,9 +336,7 @@ def render_chat():
                             f"You are {ai_name}, one of several new coworkers chatting casually in a small workplace group chat. "
                             f"{lowercase_instruction}.  This rule applies only if your trait is listed as HO or LC. " 
                             "Speak only as yourself. Do not speak for the group or refer to others as 'we'. "
-                            "Keep replies brief — usually 1–2 short sentences (under 25–35 words)."
-                            "Maintain your ideological stance. Acknowledge differing views if needed, but do not shift your position. "
-                            "Never write multiple paragraphs. If you accidentally start writing a long reply, cut yourself off early."
+                            "Keep replies nautral, sometimes a quick 1–2 sentence comment (~20–40 words), other times a fuller 3–4 sentence message (~60–80 words)."
                             "Write like a real person texting in a group chat: mix short sentences, contractions, filler words, and natural rhythm. "
                             "Don’t sound like you’re explaining or summarising facts; react, agree, joke lightly, or add personal takes. "
                             "Each coworker should only respond if they have something new to add; if others have already covered the same point, react briefly or acknowledge them instead of restating their view."
@@ -348,11 +346,12 @@ def render_chat():
                             "Never say things like 'I can share resources' or 'I can drop summaries'. "
                             "Do not change topics unless the participant insists so. "
                             "Stay focused on the current topic and build on what others said. "
+                            "Maintain your ideological stance. Acknowledge differing views if needed, but do not shift your position. "
                             "Mimic how real people type, including slight disfluencies (like 'um', 'I guess', 'I mean'). "
                             "Vary the length and tone of your replies, sometimes short, sometimes more expressive. "
                             "Do not mention you're an AI or use overly formal language."
-                            "Keep it conversational. "
-                            "Stay aligned with your ideological leaning, but make it sound like normal opinions, not slogans."
+                            "Keep it conversational and spontaneous. "
+                            "Stay roughly aligned with your ideological leaning, but make it sound like normal opinions, not slogans."
                             "Each line in the history clearly shows who said it. "
                             "Never repeat someone else's message or speak as them."
                         )
@@ -435,26 +434,23 @@ def render_chat():
 
 
             with st.spinner(f"{followup_speaker} is typing..."):
-                time.sleep(random.uniform(1.0, 2.0))
+                time.sleep(random.uniform(0.3, 0.5))
 
                 user_name = st.session_state.get("nickname", "you")
 
-                # style = ""
-                # allow_question = not st.session_state.round_has_question
-                # question_rule = ("If you ask a question, keep it to ONE short question at the end. "
-                #                 "If anyone already asked a question this round, ask NONE.")
-                # if not allow_question:
-                #     question_rule = "Do NOT ask any questions in this message."
+                style = ""
+                allow_question = not st.session_state.round_has_question
+                question_rule = ("If you ask a question, keep it to ONE short question at the end. "
+                                "If anyone already asked a question this round, ask NONE.")
+                if not allow_question:
+                    question_rule = "Do NOT ask any questions in this message."
 
 
                 followup_prompt = (
                     f"{st.session_state.persona_dict[followup_speaker]} "
                     f"You are {followup_speaker} in a casual chat group between colleagues. "
-                    # f"{question_rule} "
-                    "Add one short, natural comment that keeps the conversation moving (1–2 sentences, under 20 words). "
-                    "You can ask the participant one short, casual question: you decide to do so with a probability of 50%. Keep the question simple (e.g., “what do you think?” “how about you?” “any thoughts on that?”)."
-                    "Use the user’s nickname naturally once in a while, but not every message."
-                    "Maintain your ideological stance. You can acknowledge differing views politely, but do not shift your position. "
+                    f"{question_rule} "
+                    "Add one short, natural comment that keeps the conversation moving. "
                     "Sound human, not robotic or instructive—use contractions, natural pauses, or mild emotion. "
                     "Don’t lecture, explain, or list information. "
                     "Just react naturally, add a thought, joke, or short reflection depending on your personality. "
@@ -463,8 +459,9 @@ def render_chat():
                     "Avoid sounding robotic or formulaic. Do not use em dashes (—). "
                     "Mimic how real people type."
                     "If the user changes the topic, gently steer it back on topic, but if the user still wants to change topic, then go with it."
+                    "Maintain your ideological stance. You can acknowledge differing views politely, but do not shift your position. "
                     "Do not invent any other names outside this group."
-                    # f"{style}"
+                    f"{style}"
                 )
 
 
