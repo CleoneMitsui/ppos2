@@ -103,9 +103,11 @@ if st.session_state.page == "intro":
 
     **Use of Generative AI:** In this study, you will interact with AI agents in a simulated group chat. Your typed messages will be processed by AI models to generate responses in real time.
                 After the study, your input may later be analysed using AI tools for research purposes. Only the text you write during the experiment will be entered into the AI system. 
-                No personally identifiable information will be included. By continuing, you consent to both interacting with AI agents and having your messages analysed for academic research.
+                No personally identifiable information will be included.
                 
-    **Participation and Withdrawal:** Participation in this study is not obligatory. Participants have the right to withdraw from the study at any point. Should you decide to discontinue the participation, you may do so by closing the browser. 
+    **Note on Political-Belief Questions:** This study includes questions about political views. If you do not wish to answer questions of this nature, please feel free to decline participation. Participation is entirely voluntary, and you may stop at any time by closing the browser tab.
+                
+    **Participation and Withdrawal:** Participation in this study is not obligatory. Participants have the right to withdraw from the study at any point by closing the browser. 
                 Data that is partially completed will not be saved or be subjected to analysis.
 
     **Rights of Research Participants:** This project has been reviewed by the Osaka Metropolitan University Research Ethics Board for research involving human participants.
