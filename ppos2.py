@@ -245,7 +245,7 @@ elif st.session_state.page == "pre_stance":
             ("immigration", "Strengthening border control and limiting immigration"),
             ("abortion", "Legal access to abortion"),
             ("vaccines", "Mandating vaccines for children"),
-            ("gender", "Introducing gender education in elementary schools")
+            ("gender", "Teaching gender identity in elementary schools")
         ]
 
         # add consistent radio styling
