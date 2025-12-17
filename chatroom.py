@@ -13,6 +13,25 @@ from assign_conditions import get_even_assignment
 if "agent_rounds_raw" not in st.session_state:
     st.session_state.agent_rounds_raw = []
 
+import re
+
+def strip_speaker_prefix(text, speaker, members):
+    # remove leading "ben:" or "Ben:" or "ben: ben:" style prefixes
+    cleaned = (text or "").strip()
+
+    # build a pattern that matches any member name followed by a colon
+    names = [speaker] + list(members)
+    names = [re.escape(n) for n in names if n]  # escape for safety
+    if not names:
+        return cleaned
+
+    pattern = rf"^({'|'.join(names)}):\s*"
+
+    # keep stripping while a prefix exists (handles "Ben: ben: ...")
+    while re.match(pattern, cleaned, flags=re.IGNORECASE):
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
+
+    return cleaned
 
 
 def render_chat():
@@ -38,21 +57,6 @@ def render_chat():
     st.markdown(
         "<p style='color:red; font-weight:bold;'>⚠️ Please do not refresh the page. Doing so will restart the study and erase your answers.</p>",
         unsafe_allow_html=True
-    )
-
-    # block F5 and Ctrl+R
-    components.html(
-        """
-        <script>
-        document.addEventListener("keydown", function (e) {
-            if ((e.key === "F5") || (e.ctrlKey && e.key === "r")) {
-                e.preventDefault();
-                alert("Please do not refresh the page. Doing so will restart the study and erase your answers.");
-            }
-        });
-        </script>
-        """,
-        height=0
     )
 
     if "awaiting_post" not in st.session_state:
@@ -385,10 +389,11 @@ def render_chat():
                         model="gpt-5.2",
                         messages=[{"role": "system", "content": (
                             f"{st.session_state.persona_dict[ai_name]} "
-                            f"You are one of several coworkers in a casual group chat at a new workplace. "
+                            f"You are {ai_name} , one of several coworkers in a casual group chat at a new workplace. "
                             f"Stay aligned with your {ideology} leaning. "
                             "Speak only as yourself. Do not speak for the group or refer to others as 'we'. "
                             "Respond naturally as if in a group chat. Be casual and brief. "
+                            "If you express agreement or disagreement, never refer to yourself."
                             "Keep your response to 1 to 3 sentences. No bullet points. "
                             "Vary your tone and length like real people. Do not use em dashes (—). "
                             "Do not ask the participant a direct question or mention their name. "
@@ -406,6 +411,8 @@ def render_chat():
                     )
                     reply = response.choices[0].message.content.strip()
                     reply = reply.replace("—", "...")
+                    reply = strip_speaker_prefix(reply, ai_name, group_members)
+
                     # recursively remove any group member names at the beginning
                     while True:
                         for other_name in group_members:
@@ -561,6 +568,8 @@ def render_chat():
                 )
                 reply = response.choices[0].message.content.strip()
                 reply = reply.replace("—", "...")
+                reply = strip_speaker_prefix(reply, ai_name, group_members)
+
 
 
                 timestamp = datetime.now().strftime("%H:%M:%S")
