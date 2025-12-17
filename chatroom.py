@@ -385,8 +385,7 @@ def render_chat():
                         model="gpt-5.2",
                         messages=[{"role": "system", "content": (
                             f"{st.session_state.persona_dict[ai_name]} "
-                            f"You are {ai_name} , one of several coworkers in a casual group chat at a new workplace. "
-                            f"The main ongoing discussion topic in this chat is: {topic}. "
+                            f"You are one of several coworkers in a casual group chat at a new workplace. "
                             f"Stay aligned with your {ideology} leaning. "
                             "Speak only as yourself. Do not speak for the group or refer to others as 'we'. "
                             "Respond naturally as if in a group chat. Be casual and brief. "

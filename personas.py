@@ -69,7 +69,8 @@ def generate_personas(ideology, nickname=None):
     persona_dict = {}
     for name, (trait_key, style_description) in zip(selected_names, selected_traits):
         ideological_blurb = get_ideological_values(ideology)
-        persona_dict[name] = f"You are {name}. {ideological_blurb} {style_description}"
+        persona_dict[name] = persona_dict[name] = f"{ideological_blurb} {style_description}"
+
 
     # trait key for follow-up styles
     trait_dict = {name: trait_key for name, (trait_key, _) in zip(selected_names, selected_traits)}
@@ -79,10 +80,4 @@ def generate_personas(ideology, nickname=None):
     available_names = [name for name in selected_names if name.lower() != (nickname or "").lower()]
     selected_group = random.sample(available_names, 3)
 
-
-
     return selected_group, persona_dict, trait_dict, avatar_map
-
-
-
-
