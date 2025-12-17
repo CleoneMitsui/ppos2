@@ -24,6 +24,20 @@ def strip_name_prefix(text: str, names: list[str]) -> str:
     pattern = r"^(" + "|".join(re.escape(n) for n in names) + r")\s*:\s*"
     return re.sub(pattern, "", text, flags=re.IGNORECASE)
 
+def trim_to_last_sentence(text: str, max_words: int = 60) -> str:
+    text = text.strip()
+
+    words = text.split()
+    if len(words) > max_words:
+        text = " ".join(words[:max_words]).strip()
+
+    # trim to last english sentence boundary
+    m = re.search(r"^(.*?[\.!?…])(?!.*[\.!?…]).*$", text)
+    if m:
+        return m.group(1).strip()
+
+    return text.rstrip(",;:") + "."
+
 
 def render_chat():
 
@@ -186,6 +200,9 @@ def render_chat():
             allow_html=True
         )
 
+
+
+
     # ---------- user input ----------
     user_input = st.chat_input("Type your message here...")
     if user_input:
@@ -217,7 +234,8 @@ def render_chat():
         st.rerun()
 
 
-    # ---------- ai responses ----------
+
+    # ---------- ai responses ----------(loop)
     if st.session_state.trigger_ai_reply:
         st.session_state.trigger_ai_reply = False
 
@@ -227,22 +245,14 @@ def render_chat():
 
         for i, ai_name in enumerate(ai_names):
 
-            # stagger typing start
-            if i == 0:
-                time.sleep(0.8)
-            else:
-                time.sleep(random.uniform(0.2, 0.4))
-
             with st.spinner(f"{ai_name} is typing{'.' * random.randint(1, 3)}"):
                 # typing duration
-                time.sleep(random.uniform(1.8, 2.8))
+                if i == 0:
+                    time.sleep(0.8 + random.uniform(1.8, 2.8))
+                else:
+                    time.sleep(random.uniform(2.0, 3.0))
 
                 trait = st.session_state.trait_dict[ai_name]
-                lowercase_instruction = (
-                    "use all lowercase like casual texting."
-                    if trait in ["HO", "LC"]
-                    else "use normal sentence casing."
-                )
 
             
             # extract topic and agent ideology for buildign the system prompt
@@ -255,14 +265,12 @@ def render_chat():
                     f"{st.session_state.persona_dict[ai_name]} "
                     f"The main ongoing discussion topic in this chat is: {topic}. "
                     f"You are {ai_name} in a casual coworker group chat. "
-                    f"{lowercase_instruction}.  This rule applies only if your trait is listed as HO or LC. " 
                     "Do not repeat what others already said. "
                     "If the question was answered, react briefly or add a new angle. "
                     "Stay on topic and build on the conversation. "
                     f"Stay aligned with your {ideology} leaning. "
                     "Keep replies to 1–2 short sentences. "
                     "Do not lecture, summarise, or sound like an assistant. "
-                    "Write your reply with a different opening phrase from the previous speaker. "
                     "Do not speak for the group or say 'we'. "
                     "Chat history shows who said what as 'name: message'. "
                 )
@@ -286,7 +294,8 @@ def render_chat():
             # cleanup
             raw = resp.output_text.strip()
             raw = raw.replace("—", "...")
-            reply = strip_name_prefix(raw, group_members)
+            raw = strip_name_prefix(raw, group_members)
+            reply = trim_to_last_sentence(raw, max_words=60)
 
 
             timestamp = datetime.now().strftime("%H:%M:%S")
@@ -308,6 +317,9 @@ def render_chat():
                 "timestamp_unix": time.time(),
                 "temp_round_marker": True
             })
+
+
+
 
 
         # ---------- FOLLOW-UP AGENT (one more nudge back to participant) ----------
@@ -334,7 +346,6 @@ def render_chat():
                 f"You generally lean {ideology}. "
                 f"You are {followup_speaker}, chatting casually with coworkers. "
                 "Add one short, natural follow-up that keeps the conversation moving. "
-                "Write your reply with a different opening phrase from the previous speaker. "
                 "You may ask the participant one short, casual question. "
                 "Do not repeat what others already said. "
                 "If the topic drifted, gently relate it back to the main topic. "
@@ -360,14 +371,16 @@ def render_chat():
             resp = client.responses.create(
                 model=MODEL_NAME,
                 input=[system_block] + context_blocks,
-                max_output_tokens=120
+                max_output_tokens=100
             )
 
 
         # cleanup
         raw = resp.output_text.strip()
         raw = raw.replace("—", "...")
-        reply = strip_name_prefix(raw, group_members)
+        raw = strip_name_prefix(raw, group_members)
+        reply = trim_to_last_sentence(raw, max_words=60)
+
 
 
         timestamp = datetime.now().strftime("%H:%M:%S")
